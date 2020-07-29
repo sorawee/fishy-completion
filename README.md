@@ -3,7 +3,7 @@
 This [Quickscript](https://docs.racket-lang.org/quickscript/) script allows users to autocomplete
 an identifier via static analysis. 
 
-To run the script, either use the menu or the keybinding `ctrl ,`. Running repeatedly will cycle through all candidates (similar to the [dynamic completion](https://github.com/Metaxal/quickscript-extra/blob/master/scripts/dynamic-abbrev.rkt) in Quickscript Extra).
+To run the script, either use the menu or the keybinding (`ctrl ,` or `ctrl <`). Running repeatedly will cycle through all candidates (similar to the [dynamic completion](https://github.com/Metaxal/quickscript-extra/blob/master/scripts/dynamic-abbrev.rkt) in Quickscript Extra).
 
 ## Guarantee and limitation
 
