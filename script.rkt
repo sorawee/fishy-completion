@@ -59,7 +59,6 @@
         [_ (void)]))
     (for/list ([x (in-set locals)]
                [i (in-naturals)])
-      ;; use syntax-position = 0 and encode the n-th candidate with syntax-span
       (datum->syntax the-id
                      x
                      (list (syntax-source the-id)
