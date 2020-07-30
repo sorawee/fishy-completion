@@ -40,7 +40,7 @@
             #:when (eq? 'syncheck:add-arrow/name-dup/pxpy (vector-ref entry 0))
             ;; only care about local bindings
             #:when (not (vector-ref entry 11))
-            ;; syntax-position = 0 is the magic number for our framework
+            ;; only interested in our instrumented code
             #:when (>= (vector-ref entry 5) magic-number))
     ;; The syntax-span indicates the n-th candidate
     (~s (syntax-e (vector-ref vec (quotient (- (vector-ref entry 5) magic-number)
