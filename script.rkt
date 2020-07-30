@@ -93,8 +93,6 @@
 
 ;; replace :: syntax? exact-positive-integer? any/c -> syntax?
 (define (replace top-stx position new-stx)
-  ;; NOTE: #%module-begin's syntax-span is annoying, so let's match
-  ;; against it explicitly.
   (syntax-parse top-stx
     [(mod name lang {~and mb-pair (mb . mb-body)})
      (define mb-body*
