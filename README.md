@@ -32,3 +32,10 @@ If the current position is not associated with any token that could become an id
 
 When there is a compile-time error, fishy completion will disable itself. There are a few exceptions as described above.
 
+## Related work
+
+There are several completion framework for Racket. 
+
+- DrRacket itself has the completion functionality via `ctrl .`. It does not autocomplete identifiers defined within a module.
+- [Racket Mode](https://www.racket-mode.com/) has its own completion functionality. In addition to supporting identifiers required from other modules, it supports identifiers within a module via Check Syntax (and also other things like autocompleting `require`). However, it only considers identifiers that appear textually in the code, so identifiers generated programmatically (e.g., from the `struct` form) are not considered. It does not autocomplete only identifiers that would be in scope.
+- [DrComplete](https://github.com/yjqww6/drcomplete) enhances the completion functionality in DrRacket significantly. Similar to Racket Mode, it can autocomplete variety of things, including identifiers defined in a module. Additionally, it can discover identifiers generated programmatically. However, similar to Racket Mode, it does not autocomplete only identifiers that would be in scope.
