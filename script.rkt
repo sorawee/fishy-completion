@@ -33,6 +33,16 @@
            'disappeared-use
            (map syntax-local-introduce (syntax->list #'(id ...))))]))))
 
+;; Check Syntax only provides us starting and ending position.
+;; How do we recover the actual identifier?
+;;
+;; Here's the idea: each identifier will adjust its srcloc to the position =
+;; magic-number + (magic-number* * i) where i is the i-th candidate.
+;; Once we get a position information, we can do math to compute i.
+;; Note that syntax with sub-range-binders will adjust its position automatically
+;; but this shouldn't offset things significantly, so the scheme
+;; should still work
+
 ;; analyze :: syntax? (listof identifier?) -> (setof string?)
 (define (analyze stx ids)
   (define vec (list->vector ids))
@@ -42,7 +52,6 @@
             #:when (not (vector-ref entry 11))
             ;; only interested in our instrumented code
             #:when (>= (vector-ref entry 5) magic-number))
-    ;; The syntax-span indicates the n-th candidate
     (~s (syntax-e (vector-ref vec (quotient (- (vector-ref entry 5) magic-number)
                                             magic-number*))))))
 
