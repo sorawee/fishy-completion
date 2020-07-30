@@ -129,9 +129,11 @@
 
 ;; my-read :: string? -> (or/c #f syntax?)
 (define (my-read s)
+  (define p (open-input-string s))
+  (port-count-lines! p)
   (with-handlers ([exn:fail? (λ (_) #f)])
     (parameterize ([read-accept-reader #t])
-      (read-syntax (string->path "dummy") (open-input-string s)))))
+      (read-syntax (string->path "dummy") p))))
 
 ;; query :: exact-positive-integer? string? ->
 ;;          (either (values #f #f '()) (values string? string? (listof string?)))
