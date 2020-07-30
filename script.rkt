@@ -33,6 +33,7 @@
            'disappeared-use
            (map syntax-local-introduce (syntax->list #'(id ...))))]))))
 
+;; analyze :: syntax? (listof identifier?) -> (setof string?)
 (define (analyze stx ids)
   (define vec (list->vector ids))
   (for/set ([entry (in-list (show-content stx))]
@@ -44,29 +45,35 @@
     ;; The syntax-span indicates the n-th candidate
     (~s (syntax-e (vector-ref vec (quotient (- (vector-ref entry 5) magic-number)
                                             magic-number*))))))
+
+;; find-candidates :: syntax? string? -> (listof identifier?)
 (define (find-candidates form prefix)
   (define locals (mutable-set))
   (define ns (make-base-namespace))
-  (with-handlers ([exn:fail? (λ (_) #f)])
-    (let loop ([stx (parameterize ([current-namespace ns]) (expand form))])
-      (syntax-parse stx
-        [(a . b)
-         (loop #'a)
-         (loop #'b)]
-        [x:id
-         #:when (string-prefix? (~s (syntax-e #'x)) prefix)
-         (set-add! locals (syntax-e #'x))]
-        [_ (void)]))
-    (for/list ([x (in-set locals)]
-               [i (in-naturals)])
-      (datum->syntax the-id
-                     x
-                     (list (syntax-source the-id)
-                           1
-                           0
-                           (+ (* magic-number* i) magic-number 1)
-                           0)
-                     the-id))))
+  (define stx (with-handlers ([exn:fail? (λ (_) #f)])
+                (parameterize ([current-namespace ns]) (expand form))))
+  (cond
+    [stx
+     (let loop ([stx stx])
+       (syntax-parse stx
+         [(a . b)
+          (loop #'a)
+          (loop #'b)]
+         [x:id
+          #:when (string-prefix? (~s (syntax-e #'x)) prefix)
+          (set-add! locals (syntax-e #'x))]
+         [_ (void)]))
+     (for/list ([x (in-set locals)]
+                [i (in-naturals)])
+       (datum->syntax the-id
+                      x
+                      (list (syntax-source the-id)
+                            1
+                            0
+                            (+ (* magic-number* i) magic-number 1)
+                            0)
+                      the-id))]
+    [else '()]))
 
 (define the-id #f)
 
@@ -75,6 +82,7 @@
   ;; number could potentially be an identifier once completed
   (pattern x:number))
 
+;; replace :: syntax? exact-positive-integer? any/c -> syntax?
 (define (replace top-stx position new-stx)
   ;; NOTE: #%module-begin's syntax-span is annoying, so let's match
   ;; against it explicitly.
@@ -112,39 +120,59 @@
       this-syntax
       this-syntax)]))
 
+;; my-read :: string? -> (or/c #f syntax?)
 (define (my-read s)
   (with-handlers ([exn:fail? (λ (_) #f)])
     (parameterize ([read-accept-reader #t])
       (read-syntax (string->path "dummy") (open-input-string s)))))
 
+;; query :: exact-positive-integer? string? ->
+;;          (either (values #f #f '()) (values string? string? (listof string?)))
 (define (query position code-str)
-  (define orig-stx (my-read code-str))
+  (with-cache (list position code-str)
+    (define orig-stx (my-read code-str))
+    (cond
+      [orig-stx
+       (set! the-id #f)
+       (define replaced (replace orig-stx position #t))
+       (cond
+         [the-id
+          (define as-string (~s (syntax-e the-id)))
+          (define as-list (string->list (if (= (+ 2 (string-length as-string))
+                                               (syntax-span the-id))
+                                            (string-append "|" as-string "|")
+                                            as-string)))
+          (define-values (left right)
+            (split-at as-list (- position (syntax-position the-id))))
+          (define left* (list->string left))
+          (define right* (list->string right))
+          (define candidates (find-candidates replaced left*))
+          (values
+           left*
+           right*
+           (cond
+             [(empty? candidates) '()]
+             [else
+              (define stx/candidates
+                (replace orig-stx position (cons magic-inkantation candidates)))
+              (sort (set->list (analyze stx/candidates candidates)) string<?)]))]
+         [else (values #f #f '())])]
+      [else (values #f #f '())])))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define cached (cons #f #f))
+
+(define (cache-proc key proc)
   (cond
-    [orig-stx
-     (define replaced (replace orig-stx position #t))
-     (cond
-       [the-id
-        (define as-string (~s (syntax-e the-id)))
-        (define as-list (string->list (if (= (+ 2 (string-length as-string))
-                                             (syntax-span the-id))
-                                          (string-append "|" as-string "|")
-                                          as-string)))
-        (define-values (left right)
-          (split-at as-list (- position (syntax-position the-id))))
-        (define left* (list->string left))
-        (define right* (list->string right))
-        (define candidates (find-candidates replaced left*))
-        (values
-         left*
-         right*
-         (cond
-           [candidates
-            (define stx/candidates
-              (replace orig-stx position (cons magic-inkantation candidates)))
-            (sort (set->list (analyze stx/candidates candidates)) string<?)]
-           [else '()]))]
-       [else (values #f #f '())])]
-    [else (values #f #f '())]))
+    [(equal? (car cached) key) (apply values (cdr cached))]
+    [else (call-with-values proc
+                            (λ xs
+                              (set! cached (cons key xs))
+                              (apply values xs)))]))
+
+(define-syntax-rule (with-cache key body ...)
+  (cache-proc key (λ () body ...)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Adapted from https://github.com/Metaxal/quickscript-extra/blob/master/scripts/dynamic-abbrev.rkt
@@ -152,8 +180,9 @@
 
 (define-script fishy-completion
   #:label "Fishy completion"
-  #:shortcut #\<
+  #:shortcut #\,
   #:shortcut-prefix (ctl)
+  #:persistent
   (λ (_sel #:editor ed)
     (define pos (send ed get-end-position))
     (define txt (send ed get-text))
@@ -166,10 +195,12 @@
             (second mems)
             (first matches)))
       (when str
+        (define right* (substring str (string-length left)))
         (send ed begin-edit-sequence)
         (send ed delete pos (+ pos (string-length right)))
-        (send ed insert
-              (substring str (string-length left)))
+        (send ed insert right*)
         (send ed set-position pos)
-        (send ed end-edit-sequence)))
+        (send ed end-edit-sequence)
+        (set! cached (cons (list (add1 pos) (send ed get-text))
+                           (list left right* matches)))))
     #f))
