@@ -11,6 +11,8 @@ The script guarantees that any autocompleted identifier at a position will defin
 
 In order to run the completion, the program must not have any compile-time error. However, this is too strict because the fact that you intend to use autocompletion probably means that the current program contains invalid identifiers (and thus compile-time errors). Therefore, errors that are caused by the identifier at the current position (i.e., attempting to use non-identifier macro as an identifier macro) and unbound identifiers are tolerated as special cases. Other errors such as unbalanced parentheses or errors in macro expansion will disable the completion.
 
+The autocompletion only works on code in phase 0 and phase 1. It's probably possible to remove this limitation in the future.
+
 ## Demo
 
 ![Demo 1](./demo/demo-fishy-1.gif "Demo 1")

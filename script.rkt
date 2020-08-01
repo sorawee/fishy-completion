@@ -120,7 +120,8 @@
                                  #'mb-pair
                                  (list* #'mb
                                         the-submod
-                                        `(require ',magic-inkantation)
+                                        `(require ',magic-inkantation
+                                                  (for-syntax ',magic-inkantation))
                                         mb-body*)
                                  #'mb-pair
                                  #'mb-pair))
