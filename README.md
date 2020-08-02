@@ -3,7 +3,9 @@
 This [Quickscript](https://docs.racket-lang.org/quickscript/) script allows users to autocomplete
 an identifier via static analysis. 
 
-To run the script, either use the menu or the keybinding (`ctrl ,` or `ctrl <`). Running repeatedly will cycle through all candidates (similar to the [dynamic completion](https://github.com/Metaxal/quickscript-extra/blob/master/scripts/dynamic-abbrev.rkt) in Quickscript Extra).
+To run the script, either use the menu or the keybinding (`ctrl ,` or `ctrl <` for version 1, and `ctrl m` for version 2). Running repeatedly will cycle through all candidates (similar to the [dynamic completion](https://github.com/Metaxal/quickscript-extra/blob/master/scripts/dynamic-abbrev.rkt) in Quickscript Extra).
+
+Fishy completion has two versions: version 1 (`script.rkt`) and version 2 (`script-2.rkt`). The latter is supposed to be faster and more expressive (see the limitation of version 1 below).
 
 ## Guarantee and limitation
 
@@ -11,7 +13,7 @@ The script guarantees that any autocompleted identifier at a position will defin
 
 In order to run the completion, the program must not have any compile-time error. However, this is too strict because the fact that you intend to use autocompletion probably means that the current program contains invalid identifiers (and thus compile-time errors). Therefore, errors that are caused by the identifier at the current position (i.e., attempting to use non-identifier macro as an identifier macro) and unbound identifiers are tolerated as special cases. Other errors such as unbalanced parentheses or errors in macro expansion will disable the completion.
 
-The autocompletion only works on code in phase 0 and phase 1. It's probably possible to remove this limitation in the future.
+For version 1, the autocompletion only works on code in phase 0 and phase 1. Version 2 doesn't have this restriction, but unbound identifier errors in phase higher than 1 (in different position than the current position) will not be tolerated.
 
 ## Demo
 
