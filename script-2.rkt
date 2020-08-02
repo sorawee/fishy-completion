@@ -83,8 +83,7 @@
     [(module _ _ (#%plain-module-begin form ...))
      (toplevel-walk (attribute form) 0 '())]
     [(module* _ #f (#%plain-module-begin form ...))
-     ;; TODO: is this correct?
-     (toplevel-walk (attribute form) 0 ids)]
+     (toplevel-walk (attribute form) phase ids)]
     [(module* _ _ (#%plain-module-begin form ...))
      (toplevel-walk (attribute form) 0 '())]
     [({~or* #%provide #%declare #%require #%variable-reference} _ ...) (void)]
